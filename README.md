@@ -2,7 +2,7 @@
 
 Pokémon GO search strings you can copy in one tap, a builder for making your own, and a plain English guide to every search term.
 
-**Live site:** https://YOUR-USERNAME.github.io/YOUR-REPO/
+**Live site:** https://lachlanalston.github.io/stringdex/
 
 ## Features
 
