@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>stringdex · Pokémon GO search strings</title>
+<meta name="description" content="Pokémon GO search strings that are ready to paste, plus a simple builder for your own.">
+<meta name="theme-color" content="#eaf6f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f2226" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="stringdex">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#f6f6f8;--surface:#ffffff;--surface2:#f1f1f4;--ink:#0e0e11;--muted:#6b6b76;--line:#e4e4ea;
+  --accent:#ff4d2e;--accent-ink:#fff;--inc:#16a34a;--inc-bg:#e8f7ee;--exc:#e5484d;--exc-bg:#fdecec;
+  --code-bg:#111114;--code-ink:#e9e9ee;--code-key:#ff8a70;
+  --shadow:0 1px 2px rgba(14,14,17,.04),0 8px 24px rgba(14,14,17,.06);
+  --sat:env(safe-area-inset-top);--sab:env(safe-area-inset-bottom);--nav:58px;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0b0b0d;--surface:#151518;--surface2:#1c1c20;--ink:#f4f4f6;--muted:#9a9aa6;--line:#26262c;
+  --accent:#ff6a4d;--inc:#4ade80;--inc-bg:#12281b;--exc:#ff7b7f;--exc-bg:#2e1617;
+  --code-bg:#060607;--code-ink:#ededf2;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35)}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  -webkit-font-smoothing:antialiased;padding-top:var(--sat);padding-bottom:calc(var(--nav) + var(--sab) + 48px);min-height:100vh}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+input{font:inherit;color:inherit}
+.mono,code{font-family:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace}
+.wrap{max-width:560px;margin:0 auto;padding:0 18px}
+a{color:inherit}
+
+/* header */
+header.top{position:sticky;top:0;z-index:15;display:flex;align-items:center;height:56px;margin:0 -18px;padding:0 18px;
+  background:color-mix(in srgb,var(--bg) 80%,transparent);backdrop-filter:saturate(1.8) blur(16px);-webkit-backdrop-filter:saturate(1.8) blur(16px)}
+.word{display:flex;align-items:center;gap:8px;font-weight:750;font-size:17px;letter-spacing:-.02em}
+.word i{width:22px;height:22px;border-radius:7px;background:var(--ink);display:grid;place-items:center}
+.word i::after{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent)}
+#installBtn{margin-left:auto;font-size:13px;font-weight:650;padding:7px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);display:none}
+#installBtn.show{display:inline-flex}
+
+.view{display:none}.view.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+.hero{font-size:30px;line-height:1.1;letter-spacing:-.035em;font-weight:780;margin:14px 0 18px}
+.hero span{color:var(--muted)}
+
+/* search */
+.search{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:16px;height:56px;padding:0 8px 0 16px;box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s}
+.search:focus-within{border-color:var(--ink);box-shadow:0 0 0 4px color-mix(in srgb,var(--ink) 8%,transparent),var(--shadow)}
+.search svg{flex:none;color:var(--muted)}
+.search input{flex:1;min-width:0;border:0;outline:0;background:none;height:100%;font-size:17px}
+.search input::placeholder{color:var(--muted)}
+.search input::-webkit-search-cancel-button{display:none}
+#qClear{width:34px;height:34px;border-radius:50%;background:var(--surface2);color:var(--muted);font-size:13px;display:none}
+.search.has #qClear{display:grid;place-items:center}
+#suggest{margin-top:14px}
+.toks{display:flex;flex-wrap:wrap;gap:8px}
+.tok{font-weight:600;font-size:15px;padding:0 16px;height:40px;border-radius:999px;background:var(--surface);border:1px solid var(--line);transition:background .15s,color .15s,border-color .15s}
+.tok[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.note{font-size:14px;color:var(--muted);margin:22px 0 0;max-width:40ch}
+
+/* result cards */
+.list{margin-top:16px;display:grid;gap:12px}
+.row{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:var(--shadow)}
+.row-txt b{display:block;font-size:17px;font-weight:700;letter-spacing:-.01em}
+.row-txt span{display:block;font-size:14px;color:var(--muted);margin-top:3px}
+.str{border:1px solid var(--line);margin-top:12px;font-size:12.5px;line-height:1.6;background:var(--code-bg);color:var(--code-ink);padding:12px 14px;border-radius:12px;word-break:break-all;user-select:all;-webkit-user-select:all;max-height:132px;overflow:auto}
+.row-bar{display:flex;align-items:center;gap:10px;margin-top:12px}
+.acts{display:flex;gap:6px}
+.acts button{height:44px;padding:0 14px;border-radius:12px;background:var(--surface2);font-weight:600;font-size:14px;color:var(--muted)}
+.acts .on{color:var(--accent)}
+.cp{flex:1;height:44px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .1s,background .2s}
+.cp:active{transform:scale(.98)}
+.cp.done{background:var(--inc)}
+.empty{padding:18px 4px;color:var(--muted)}
+.empty button{color:var(--ink);font-weight:650;text-decoration:underline;text-underline-offset:3px}
+
+/* builder */
+h2{font-size:28px;letter-spacing:-.03em;font-weight:780;margin:14px 0 6px}
+.sub{color:var(--muted);font-size:14px;margin:0 0 14px}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--muted);margin-bottom:14px}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.quick{display:flex;gap:8px;margin:0 0 14px}
+.quick button{height:40px;padding:0 14px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:600;font-size:14px}
+details.sec{background:var(--surface);border:1px solid var(--line);border-radius:18px;margin-bottom:10px;padding:0 14px}
+details.sec summary{list-style:none;display:flex;align-items:center;gap:8px;padding:0 2px;font-weight:700;cursor:pointer;height:54px}
+details.sec summary::-webkit-details-marker{display:none}
+.cnt{font-size:12px;font-weight:700;color:var(--accent-ink);background:var(--accent);border-radius:999px;padding:1px 8px;display:none}
+.cnt.on{visibility:visible}
+.chev{margin-left:auto;color:var(--muted);font-size:12px;transition:transform .2s}
+details.sec[open] .chev{transform:rotate(180deg)}
+.chips{display:flex;flex-wrap:wrap;gap:10px 8px;padding:6px 0 14px}
+.chip{height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface2);font-size:14px;font-weight:600;transition:background .12s,border-color .12s,color .12s}
+.chip[data-s="1"]{background:var(--inc-bg);border-color:var(--inc);color:var(--inc)}
+.chip[data-s="-1"]{background:var(--exc-bg);border-color:var(--exc);color:var(--exc)}
+
+/* dock */
+.dock{position:fixed;left:0;right:0;bottom:calc(var(--nav) + var(--sab) + 18px);z-index:20;padding:0 12px;display:none;pointer-events:none}
+body.on-build .dock{display:block}
+
+.dock-in{pointer-events:auto;max-width:560px;margin:0 auto;padding:12px;border-radius:22px;background:color-mix(in srgb,var(--surface) 88%,transparent);
+  backdrop-filter:saturate(1.8) blur(18px);-webkit-backdrop-filter:saturate(1.8) blur(18px);border:1px solid var(--line);box-shadow:0 12px 40px rgba(0,0,0,.18)}
+.readout{font-size:13px;color:var(--muted);margin:0 2px 8px;max-height:3em;overflow:auto}
+.readout b{color:var(--ink)}
+.out{font-size:12.5px;line-height:1.55;background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:10px 12px;word-break:break-all;max-height:68px;overflow:auto;min-height:40px}
+.out.ph{background:var(--surface2);color:var(--muted);font-family:inherit;font-size:14px}
+.dock-btns{display:flex;gap:8px;margin-top:10px}
+#shareBtn{height:46px;padding:0 16px;border-radius:12px;background:var(--surface2);font-weight:650}
+.dock-btns .cp{height:46px}
+
+.tipbox{margin-top:16px;font-size:14px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.tipbox b{color:var(--ink)}
+
+/* floating tab bar */
+nav.tabs{position:fixed;left:0;right:0;bottom:calc(var(--sab) + 10px);z-index:30;padding:0 16px;pointer-events:none}
+nav.tabs .in{pointer-events:auto;max-width:360px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;height:var(--nav);padding:5px;border-radius:999px;
+  background:color-mix(in srgb,var(--surface) 82%,transparent);backdrop-filter:saturate(1.8) blur(18px);-webkit-backdrop-filter:saturate(1.8) blur(18px);border:1px solid var(--line);box-shadow:0 10px 30px rgba(0,0,0,.14)}
+nav.tabs a{display:flex;align-items:center;justify-content:center;border-radius:999px;text-decoration:none;font-weight:650;font-size:15px;color:var(--muted);transition:background .2s,color .2s}
+nav.tabs a[aria-current="page"]{background:var(--ink);color:var(--bg)}
+
+.toast{position:fixed;left:50%;top:calc(var(--sat) + 12px);transform:translate(-50%,-12px);opacity:0;visibility:hidden;z-index:50;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;font-weight:650;transition:.2s;max-width:calc(100% - 36px);text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+.toast.show{transform:translate(-50%,0);opacity:1;visibility:visible}
+
+footer{color:var(--muted);font-size:12px;padding:32px 0 8px;line-height:1.6}
+
+
+/* ===== Pokémon GO inspired theme ===== */
+:root{--bg:#eaf6f4;--surface:#ffffff;--surface2:#eef5f4;--ink:#24464d;--muted:#6b8a90;--line:#d5e6e4;
+  --accent:#26b5a0;--accent2:#1fa18e;--accent-ink:#fff;--code-bg:#24464d;--code-ink:#eaf6f4;
+  --go1:#86e3b5;--go2:#3cc49a;--bar:#f3a33b;--barmax:#ee5f6a;
+  --shadow:0 2px 0 rgba(36,70,77,.05),0 8px 22px rgba(36,70,77,.08)}
+@media (prefers-color-scheme:dark){:root{--bg:#0f2226;--surface:#16323a;--surface2:#1c3c44;--ink:#e8f6f4;--muted:#93b4b8;--line:#25474f;
+  --accent:#3fd3bd;--code-bg:#0b1a1d;--code-ink:#dff3f0;--shadow:0 8px 22px rgba(0,0,0,.35)}}
+body{font-family:ui-rounded,"SF Pro Rounded","Nunito","Varela Round",system-ui,sans-serif;
+  background:
+   radial-gradient(1200px 420px at 50% -120px,color-mix(in srgb,var(--accent) 34%,transparent),transparent 70%),
+   repeating-linear-gradient(0deg,transparent 0 47px,color-mix(in srgb,var(--accent) 7%,transparent) 47px 48px),
+   repeating-linear-gradient(90deg,transparent 0 47px,color-mix(in srgb,var(--accent) 7%,transparent) 47px 48px),
+   var(--bg);background-attachment:fixed}
+header.top{background:color-mix(in srgb,var(--bg) 70%,transparent)}
+.word{font-weight:800}
+.word i{background:linear-gradient(180deg,var(--go1),var(--go2));border-radius:50%;box-shadow:inset 0 -2px 0 rgba(0,0,0,.12)}
+.word i::after{background:#fff;width:8px;height:8px}
+.hero{font-size:32px;font-weight:850;letter-spacing:-.02em;margin:18px 0 4px}
+.hero-sub{color:var(--muted);font-size:16px;margin:0 0 18px}
+.search{border-radius:999px;border:2px solid var(--line);height:56px;padding-left:18px}
+.search:focus-within{border-color:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent),var(--shadow)}
+.tok{height:42px;font-weight:750;border:2px solid var(--line);box-shadow:0 2px 0 var(--line)}
+.tok[aria-pressed="true"]{background:linear-gradient(180deg,var(--go1),var(--go2));color:#fff;border-color:var(--go2);box-shadow:0 2px 0 var(--accent2)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:22px}
+.steps div{background:var(--surface);border:2px solid var(--line);border-radius:18px;padding:12px 10px;text-align:center;box-shadow:var(--shadow)}
+.steps b{display:grid;place-items:center;width:30px;height:30px;margin:0 auto 6px;border-radius:50%;background:linear-gradient(180deg,var(--go1),var(--go2));color:#fff;font-size:15px}
+.steps span{font-size:13px;font-weight:700;color:var(--muted)}
+#homeExtras[hidden]{display:none}
+.row{border-radius:24px;border:2px solid var(--line);padding:16px}
+.row-head{display:flex;align-items:center;gap:12px}
+.row-ic{flex:none;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:var(--surface2)}
+.ic-transfer{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:linear-gradient(180deg,#7fc8f8,#3d8fe0)}
+.row-tt small{display:block;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
+.row-tt b{display:block;font-size:18px;font-weight:800;line-height:1.2}
+.row-desc{margin:10px 0 0;color:var(--muted);font-size:14.5px}
+.apr{margin-top:12px;background:var(--surface2);border-radius:16px;padding:10px 12px;display:grid;gap:7px}
+.apr-row{display:grid;grid-template-columns:62px 1fr;align-items:center;gap:8px}
+.apr-n{font-size:12px;font-weight:800;color:var(--muted)}
+.apr-track{position:relative;height:10px;border-radius:999px;background:color-mix(in srgb,var(--muted) 22%,transparent);overflow:hidden}
+.apr-fill{height:100%;border-radius:999px;background:var(--bar)}
+.apr-fill.max{background:var(--barmax)}
+.apr-up{position:absolute;top:0;bottom:0;right:0;border-radius:0 999px 999px 0;background:repeating-linear-gradient(135deg,var(--barmax) 0 4px,transparent 4px 8px);opacity:.55}
+.str{border-radius:14px;border:0}
+.cp{border-radius:999px;background:linear-gradient(180deg,var(--go1),var(--go2));box-shadow:0 3px 0 var(--accent2);font-weight:800}
+.cp:active{transform:translateY(2px);box-shadow:0 1px 0 var(--accent2)}
+.cp.done{background:linear-gradient(180deg,#9ad8ff,#3d8fe0);box-shadow:0 3px 0 #2c74bd}
+.acts button{border-radius:999px}
+nav.tabs .in{border:2px solid var(--line)}
+nav.tabs a[aria-current="page"]{background:linear-gradient(180deg,var(--go1),var(--go2));color:#fff}
+details.sec{border:2px solid var(--line);border-radius:22px}
+.chip{border:2px solid var(--line);position:relative}
+.chip[data-s="-1"] .lb{text-decoration:line-through;text-decoration-thickness:2px}
+.chip[data-s="1"]::after,.chip[data-s="-1"]::after{position:absolute;top:-7px;right:-5px;width:19px;height:19px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:900;color:#fff;border:2px solid var(--surface);line-height:1}
+.chip[data-s="1"]::after{content:"✓";background:var(--inc)}
+.chip[data-s="-1"]::after{content:"✕";background:var(--exc)}
+.cnt{background:var(--accent);display:inline-block!important;visibility:hidden;line-height:18px}
+.cnt.on{visibility:visible}
+.quick button{border:2px solid var(--line)}
+
+/* terms page */
+.jump{display:flex;gap:6px;overflow-x:auto;margin:12px -18px 0;padding:0 18px 4px;scrollbar-width:none}
+.jump::-webkit-scrollbar{display:none}
+.jump a{flex:none;font-size:13px;font-weight:750;text-decoration:none;padding:7px 12px;border-radius:999px;background:var(--surface);border:2px solid var(--line);color:var(--muted)}
+.tsec{background:var(--surface);border:2px solid var(--line);border-radius:22px;padding:6px 16px 4px;margin-top:14px;box-shadow:var(--shadow);scroll-margin-top:70px}
+.tsec h3{font-size:16px;margin:10px 0 2px}
+.tsec .hint{font-size:13px;color:var(--muted);margin:0 0 6px}
+.trow{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:start;padding:11px 0;border-top:1px solid var(--line)}
+.tsec h3+.trow,.tsec .hint+.trow{border-top:0}
+.tm{font:700 13.5px ui-monospace,"SF Mono",Menlo,Consolas,monospace;background:var(--surface2);color:var(--ink);border:1.5px solid var(--line);border-radius:10px;padding:6px 9px;max-width:46vw;text-align:left;word-break:break-all}
+.tm:active{border-color:var(--accent)}
+.tm.done{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tdesc{font-size:14px;line-height:1.45;padding-top:4px}
+.tdesc code{font-size:12.5px;background:var(--surface2);padding:1px 5px;border-radius:6px}
+#termList .empty{margin-top:12px}
+
+.savetip{font-size:13.5px;color:var(--muted);margin:14px 2px 0}
+.savetip b{color:var(--ink)}
+
+.cpform{display:flex;align-items:center;gap:8px;margin:0 0 6px}
+.cpform input{flex:1;min-width:0;height:44px;border-radius:999px;border:2px solid var(--line);background:var(--surface2);padding:0 14px;font-size:16px;font-weight:700;outline:0}
+.cpform input:focus{border-color:var(--accent)}
+.cpform span{font-size:13px;font-weight:700;color:var(--muted)}
+.cpform button{height:44px;padding:0 18px;border-radius:999px;background:linear-gradient(180deg,var(--go1),var(--go2));color:#fff;font-weight:800;box-shadow:0 2px 0 var(--accent2)}
+body.typing .dock,body.typing nav.tabs{display:none!important}
+.cptip{font-size:12.5px;color:var(--muted);margin:0 0 14px}
+/* builder groups */
+.gcards{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 8px;max-height:104px;overflow:auto}
+.gcards[hidden],.orhint[hidden],.readout[hidden]{display:none}
+.gcard{display:inline-flex;align-items:center;gap:4px;background:var(--surface2);border:2px solid var(--line);border-radius:999px;padding:3px 3px 3px 11px;font-size:13px;font-weight:750;max-width:100%}
+.gcard.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--surface))}
+.gtxt i{font-style:normal;color:var(--accent);font-weight:800}
+.gtxt .neg{color:var(--exc)}
+.gcard .or{font-size:12px;font-weight:800;color:var(--accent);background:var(--surface);border-radius:999px;padding:5px 9px;margin-left:4px}
+.gcard.on .or{background:var(--accent);color:#fff}
+.gcard .x{width:26px;height:26px;border-radius:50%;color:var(--muted);font-size:12px}
+.gand{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.orhint{font-size:13px;color:var(--muted);background:color-mix(in srgb,var(--accent) 10%,transparent);border-radius:12px;padding:7px 10px;margin:0 0 8px}
+.orhint button{font-weight:800;color:var(--accent);text-decoration:underline;margin-left:4px}
+body.on-build{padding-bottom:calc(var(--nav) + var(--sab) + var(--dockh,220px) + 36px)}
+
+/* ===== small phones + accessibility ===== */
+:root{--muted:#4c6b71}
+@media (prefers-color-scheme:dark){:root{--muted:#a6c3c6}}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:focus{outline:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:12px}
+.search:focus-within{outline:none}
+/* tap targets 44px */
+.tok{min-height:44px;height:auto}
+.chip{min-height:44px;height:auto}
+.tm{min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center}
+.gcard{min-height:48px}
+.gcard .or{min-height:40px;padding:0 12px}
+.gcard .x{width:40px;height:40px}
+#qClear{width:44px;height:44px}
+.jump a{min-height:40px;display:inline-flex;align-items:center}
+/* dock handle */
+.dock-handle{display:flex;justify-content:center;align-items:center;width:100%;height:24px;margin:-6px 0 4px}
+.dock-handle span{width:40px;height:5px;border-radius:999px;background:var(--line)}
+.dock-handle[hidden]{display:none}
+/* empty dock: slim */
+body.dock-empty .out,body.dock-empty .dock-btns,body.dock-empty .gcards,body.dock-empty .orhint{display:none}
+body.dock-empty .readout{margin:2px;text-align:center}
+/* minimised dock: one line */
+body.dock-mini .gcards,body.dock-mini .readout,body.dock-mini .orhint{display:none!important}
+body.dock-mini .out{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:none;min-height:0}
+body.dock-mini .dock-btns{margin-top:8px}
+body.dock-mini .dock-btns .cp,body.dock-mini #shareBtn{height:42px}
+/* short screens */
+@media (max-height:700px){
+  :root{--nav:54px}
+  .hero{font-size:26px;margin-top:8px}
+  .hero-sub{font-size:15px;margin-bottom:12px}
+  header.top{height:48px}
+  .gcards{max-height:62px}
+  .readout{max-height:2.6em}
+}
+/* narrow screens */
+@media (max-width:360px){
+  .wrap{padding:0 14px}
+  .hero{font-size:25px}
+  h2{font-size:24px}
+  .steps{gap:6px}
+  .steps div{padding:10px 6px}
+  .steps span{font-size:12px}
+  .quick button{padding:0 12px;font-size:13.5px}
+  .dock{padding:0 8px}
+}
+/* respect reduce motion */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="word"><i></i>stringdex</span>
+    <button id="installBtn">Install app</button>
+  </header>
+
+  <section class="view" id="v-presets">
+    <h1 class="hero">Pokémon GO search strings</h1>
+    <p class="hero-sub">Tap, copy, paste into your Pokémon storage. That's it.</p>
+    <label class="search" id="searchBox">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Search strings" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="Search strings">
+      <button id="qClear" aria-label="Clear search">✕</button>
+    </label>
+    <div id="suggest">
+      
+      <div class="toks" id="sugs"></div>
+      <div id="homeExtras">
+      <div class="steps">
+        <div><b>1</b><span>Pick a string</span></div>
+        <div><b>2</b><span>Tap copy</span></div>
+        <div><b>3</b><span>Paste in GO</span></div>
+      </div>
+      <p class="savetip"><b>Want to keep one?</b> GO remembers your recent searches. Tap See more in the search bar, then hold a search under Recent to pin it to Favourites.</p>
+    </div>
+    </div>
+    <p class="sr" id="resCount" aria-live="polite"></p>
+    <div class="list" id="presetList" hidden></div>
+  </section>
+
+  <section class="view" id="v-build">
+    <h2>Make your own</h2>
+    <p class="sub">Every tap adds an <b>and</b>. Want an <b>or</b>? Tap <b>+ or</b> on a group in the bottom panel, then pick more.</p>
+    <div class="legend"><span><i style="background:var(--inc)"></i>tap once: include</span><span><i style="background:var(--exc)"></i>tap twice: leave out</span></div>
+    <div class="quick"><button id="protectBtn">Leave out my keepers</button><button id="clearBtn">Start over</button></div>
+    <div id="sections"></div>
+  </section>
+
+  <section class="view" id="v-terms">
+    <h2>Every search term</h2>
+    <p class="sub">Everything you can type in your Pokémon storage search. Tap a term to copy it.</p>
+    <label class="search" id="termBox">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="tq" type="search" placeholder="Filter terms" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Filter terms">
+    </label>
+    <div class="jump" id="termJump"></div>
+    <div id="termList"></div>
+  </section>
+
+
+  <footer>
+    Strings last checked in game Oct 2026. If one stops working, it's usually because Niantic renamed a term.<br>
+    Fan project. Not affiliated with Niantic, Nintendo or The Pokémon Company.
+  </footer>
+</div>
+
+<div class="dock" id="dock">
+  <div class="dock-in">
+    <button class="dock-handle" id="dockToggle" aria-expanded="true" aria-controls="dock"><span aria-hidden="true"></span><b class="sr">Show or hide details</b></button>
+    <div class="readout" id="readout" aria-live="polite"></div>
+    <div class="gcards" id="gcards" hidden></div>
+    <div class="orhint" id="orHint" hidden>Your next taps join the highlighted group as <b>or</b>. <button id="orDone">Done</button></div>
+    <div class="out ph" id="out">Nothing picked yet</div>
+    <div class="dock-btns">
+      <button id="shareBtn">Share</button>
+      <button class="cp" id="buildCopy">Copy</button>
+    </div>
+  </div>
+</div>
+
+<nav class="tabs" aria-label="Main">
+  <div class="in">
+    <a href="#presets" data-v="presets">Strings</a>
+    <a href="#build" data-v="build">Build</a>
+    <a href="#terms" data-v="terms">Terms</a>
+  </div>
+</nav>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+const store={
+  get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+const $=s=>document.querySelector(s);
+const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e};
+
+/* ---------- strings ---------- */
+const TWO_PERFECT="4attack,4defense&4attack,4hp&4defense,4hp";
+const TRADE_EVOS="kadabra,machoke,graveler,haunter,boldore,gurdurr,karrablast,shelmet,phantump,pumpkaboo";
+/* regional exclusives, Unown (201) and the Scatterbug line (664-666) are left out by dex number */
+const PROTECT="&!shiny&!lucky&!legendary&!mythical&!ultra beasts&!shadow&!purified&!costume&!background&!#&!favourite&!favorite&!xxl&!xl&!xs&!xxs&!dynamax&!gigantamax&!83&!115&!122&!128&!201&!214&!222&!313-314&!324&!335-338&!357&!369&!439&!441&!455&!480-482&!511-516&!538-539&!556&!561&!626&!631-632&!664-666&!701&!707&!764&!874&!year2016-2020&!evolvenew&!0attack,!0defense,!0hp";
+const PRESETS=[
+  {id:"cap-silver",icon:"silver",tag:"Hyper Training",bars:[15,15,11],up:[2],title:"Silver Bottle Cap upgrade",desc:"Shinies with two 15s already. One Silver Bottle Cap maxes the third stat and you've got a shiny hundo.",k:"silver bottle cap hyper training shiny hundo upgrade",s:"shiny&!4*&!shadow&4attack,4defense&4attack,4hp&4defense,4hp"},
+  {id:"cap-gold",icon:"gold",tag:"Hyper Training",bars:[12,10,13],up:[0,1,2],title:"Gold Bottle Cap upgrade",desc:"Shiny legendaries, mythicals and Ultra Beasts that aren't hundos yet. A Gold Bottle Cap maxes all three stats, so use it on the rarest thing you own.",k:"gold bottle cap hyper training shiny legendary mythical hundo upgrade",s:"shiny&legendary,mythical,ultra beasts&!4*&!shadow"},
+  {id:"tr-week",icon:"transfer",tag:"Clean up",title:"Transfer: last 7 days",desc:"0 to 2 star catches from this week. Anything special is left out.",k:"transfer trash clean junk delete storage space week recent 7 days",s:"age0-7&0*,1*,2*"+PROTECT},
+  {id:"tr-all",icon:"transfer",tag:"Clean up",title:"Transfer: all time",desc:"The big clean out. Every 0 to 2 star you own, with the same stuff left out.",k:"transfer trash clean junk delete storage space all time everything",s:"0*,1*,2*"+PROTECT}
+];
+const SUGGEST=["silver cap","gold cap","transfer"];
+
+/* builder: chips in a group are OR'd, groups are AND'd, a left out chip is its own !term */
+const TYPES=["Normal","Fire","Water","Grass","Electric","Ice","Fighting","Poison","Ground","Flying","Psychic","Bug","Rock","Ghost","Dragon","Dark","Steel","Fairy"];
+const GROUPS=[
+  {id:"sp",name:"Special",open:true,items:[["Shiny","shiny"],["Lucky","lucky"],["Legendary","legendary"],["Mythical","mythical"],["Ultra Beast","ultra beasts"],["Shadow","shadow"],["Purified","purified"],["Costume","costume"],["Dynamax","dynamax"],["Gigantamax","gigantamax"],["Background","background"],["Location background","locationbackground"],["Special background","specialbackground"]]},
+  {id:"iv",name:"Stars and IVs",open:true,items:[["4★","4*"],["3★","3*"],["2★","2*"],["1★","1*"],["0★","0*"],["15 Attack","4attack"],["15 Defence","4defense"],["15 HP","4hp"],
+    {label:"Two 15s",multi:TWO_PERFECT.split("&"),incOnly:true},
+    {label:"Nundo",inc:"0attack&0defense&0hp",exc:"!0attack,!0defense,!0hp",split:true}]},
+  {id:"cp",name:"CP",items:[["Under 1500","cp-1500"],["Under 2500","cp-2500"],["Over 3000","cp3000-"]]},
+  {id:"ag",name:"When caught",items:[["Today","age0"],["Last 7 days","age0-7"],["Last 30 days","age0-30"]]},
+  {id:"ty",name:"Type",items:TYPES.map(t=>[t,t.toLowerCase()])},
+  {id:"or",name:"Where from",items:[["Hatched","hatched"],["Raid","raid"],["Research","research"],["GO Battle League","gbl"],["Rocket","rocket"],["Traded","traded"]]},
+  {id:"st",name:"Status",items:[["Tagged","#"],["Favourite","favorite"],["Buddy","buddy"],["Can evolve","evolve"],["New dex entry","evolvenew"],["Can Mega","megaevolve"],["In a gym","defender"],["Legacy move","@special"]]},
+  {id:"sz",name:"Size",items:[["XXL","xxl"],["XL","xl"],["XS","xs"],["XXS","xxs"]]}
+].map(g=>({...g,items:g.items.map((it,i)=>Array.isArray(it)?{label:it[0],term:it[1],key:g.id+":"+i}:{...it,key:g.id+":"+i})}));
+const ITEM_BY_KEY={};GROUPS.forEach(g=>g.items.forEach(it=>ITEM_BY_KEY[it.key]=it));
+/* custom CP ranges use keys like cpx:1300-1500 */
+function cpItem(lo,hi){
+  const term="cp"+(lo===hi?lo:(lo??"")+"-"+(hi??""));
+  const label=lo===hi?"CP "+lo:lo==null?"CP up to "+hi:hi==null?"CP "+lo+"+":"CP "+lo+" to "+hi;
+  return{key:"cpx:"+(lo??"")+"-"+(hi??""),term,label};
+}
+function getItem(k){
+  if(ITEM_BY_KEY[k])return ITEM_BY_KEY[k];
+  const m=/^cpx:(\d*)-(\d*)$/.exec(k);if(!m||(!m[1]&&!m[2]))return null;
+  return cpItem(m[1]?+m[1]:null,m[2]?+m[2]:null);
+}
+const KEEPERS=["sp:0","sp:1","sp:2","sp:3","sp:4","sp:5","sp:7","sp:10","iv:0","iv:9","st:0","st:1","sz:0","sz:3"];
+
+/* ---------- copy ---------- */
+let toastT;
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2000)}
+async function copyText(text){
+  try{await navigator.clipboard.writeText(text);return true}catch(e){
+    const ta=document.createElement("textarea");ta.value=text;ta.setAttribute("readonly","");
+    ta.style.cssText="position:fixed;top:0;left:0;opacity:0;font-size:16px";document.body.appendChild(ta);
+    ta.select();ta.setSelectionRange(0,text.length);let ok=false;try{ok=document.execCommand("copy")}catch(_){}
+    ta.remove();return ok}
+}
+async function doCopy(text,btn){
+  if(!text){toast("Pick something first");return}
+  if(await copyText(text)){const n=store.get("sd.copies",0);store.set("sd.copies",n+1);toast(n<3?"Copied! Tip: in GO, hold it under Recent to pin it to Favourites":"Copied. Now paste it in GO");if(btn){const o=btn.innerHTML;btn.classList.add("done");btn.textContent="✓ Copied";setTimeout(()=>{btn.classList.remove("done");btn.innerHTML=o},1300)}}
+  else toast("Couldn't copy. Tap the name and long press the string instead.");
+}
+
+/* ---------- rows ---------- */
+const COPY='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="3"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>Copy string';
+function capSVG(kind){
+  const pts=[];for(let i=0;i<48;i++){const r=i%2?17:19.5,a=i/48*Math.PI*2;pts.push((22+r*Math.cos(a)).toFixed(1)+","+(22+r*Math.sin(a)).toFixed(1))}
+  const g=kind==="gold"?["#fff3b0","#f2c230","#b8860b"]:["#ffffff","#d4dadf","#8e9aa4"];
+  return `<svg viewBox="0 0 44 44" width="40" height="40" aria-hidden="true"><defs><radialGradient id="cg-${kind}" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="${g[0]}"/><stop offset=".55" stop-color="${g[1]}"/><stop offset="1" stop-color="${g[2]}"/></radialGradient></defs><polygon points="${pts.join(" ")}" fill="url(#cg-${kind})" stroke="${g[2]}" stroke-width=".8"/><circle cx="22" cy="22" r="11" fill="none" stroke="${g[2]}" stroke-opacity=".45" stroke-width="1.4"/><path d="M17 23l3.2 3.2L27.5 19" fill="none" stroke="${g[2]}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" stroke-opacity=".8"/></svg>`;
+}
+const ICONS={silver:()=>capSVG("silver"),gold:()=>capSVG("gold"),
+  transfer:()=>'<span class="ic-transfer"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h12"/><path d="M12 6l6 6-6 6"/><path d="M20 5v14"/></svg></span>'};
+function appraisal(bars,up){
+  const w=el("div","apr");["Attack","Defense","HP"].forEach((n,i)=>{
+    const r=el("div","apr-row");r.append(el("span","apr-n",n));
+    const tr=el("div","apr-track"),f=el("div","apr-fill"+(bars[i]===15?" max":""));f.style.width=(bars[i]/15*100)+"%";tr.append(f);
+    if(up&&up.includes(i)){const u=el("div","apr-up");u.style.left=(bars[i]/15*100)+"%";tr.append(u)}
+    r.append(tr);w.append(r)});
+  return w;
+}
+function row(p,opts={}){
+  const r=el("div","row");
+  if(p.icon){const h=el("div","row-head");const ic=el("div","row-ic");ic.innerHTML=ICONS[p.icon]();h.append(ic);
+    const tt=el("div","row-tt");tt.append(el("small",null,p.tag||""),el("b",null,p.title));h.append(tt);r.append(h);
+    if(p.desc)r.append(el("p","row-desc",p.desc));}
+  else{const t=el("div","row-txt");t.append(el("b",null,p.title));if(p.desc)t.append(el("span",null,p.desc));r.append(t);}
+  if(p.bars)r.append(appraisal(p.bars,p.up));
+  r.append(el("div","str mono",p.s));
+  const bar=el("div","row-bar"),a=el("div","acts");
+  const c=el("button","cp");c.innerHTML=COPY;c.setAttribute("aria-label","Copy string: "+p.title);c.onclick=()=>doCopy(p.s,c);
+  bar.append(a,c);r.append(bar);return r;
+}
+
+/* ---------- strings tab ---------- */
+let query="";
+function renderSugs(){const w=$("#sugs");w.innerHTML="";SUGGEST.forEach(q=>{const b=el("button","tok",q);b.setAttribute("aria-pressed",query.trim().toLowerCase()===q);b.onclick=()=>{const on=query.trim().toLowerCase()===q;$("#q").value=on?"":q;setQuery(on?"":q)};w.append(b)})}
+function setQuery(q){query=q;$("#searchBox").classList.toggle("has",!!q);renderSugs();renderPresets()}
+function renderPresets(){
+  const list=$("#presetList");list.innerHTML="";
+  const words=query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  $("#homeExtras").hidden=!!words.length;list.hidden=!words.length;
+  if(!words.length)return;
+  const items=PRESETS.filter(p=>{const hay=(p.title+" "+p.k).toLowerCase();return words.every(w=>hay.includes(w)||hay.includes(w.replace(/s$/,"")))});
+  if(!items.length){const e=el("div","empty","No string for that yet. ");const b=el("button",null,"Build it yourself");b.onclick=()=>{location.hash="build"};e.append(b);list.append(e);return}
+  $("#resCount").textContent=items.length+(items.length===1?" string found":" strings found");
+  items.forEach(p=>list.append(row(p)));
+}
+
+
+/* ---------- builder ----------
+   Works like GO itself: a list of groups joined with AND,
+   options inside one group joined with OR. */
+GROUPS.forEach(g=>g.items.forEach(it=>{it.solo=!!(it.multi||it.split)}));
+let groups=store.get("sd.groups",[]).filter(g=>g&&g.items&&g.items.every(x=>getItem(x.k)));
+let active=null;
+function findKey(k){for(let gi=0;gi<groups.length;gi++){const ii=groups[gi].items.findIndex(x=>x.k===k);if(ii>-1)return[gi,ii]}return null}
+function chipState(k){const f=findKey(k);return f?(groups[f[0]].items[f[1]].n?-1:1):0}
+function dropGroup(gi){groups.splice(gi,1);if(active===gi)active=null;else if(active!==null&&active>gi)active--}
+function tapChip(it){
+  const f=findKey(it.key);
+  if(!f){
+    if(it.solo||active===null||!groups[active]||groups[active].solo)groups.push({items:[{k:it.key,n:0}],solo:it.solo});
+    else groups[active].items.push({k:it.key,n:0});
+  }else{
+    const[gi,ii]=f,x=groups[gi].items[ii];
+    if(!x.n&&!it.incOnly)x.n=1;
+    else{groups[gi].items.splice(ii,1);if(!groups[gi].items.length)dropGroup(gi)}
+  }
+  refresh();
+}
+function clauseOf(x){const it=getItem(x.k);if(it.multi)return it.multi.join("&");if(it.split)return x.n?it.exc:it.inc;return(x.n?"!":"")+it.term}
+function labelOf(x){const it=getItem(x.k);return(x.n?"not ":"")+it.label}
+function buildString(){return{s:groups.map(g=>g.items.map(clauseOf).join(",")).join("&")}}
+function renderSections(){
+  const wrap=$("#sections");wrap.innerHTML="";
+  GROUPS.forEach(g=>{
+    const d=el("details","sec");d.open=!!g.open||g.items.some(it=>findKey(it.key));d.dataset.g=g.id;
+    const s=el("summary");s.append(el("span",null,g.name),el("span","cnt"),el("span","chev","▾"));d.append(s);
+    const chips=el("div","chips");
+    g.items.forEach(it=>{const b=el("button","chip");b.dataset.k=it.key;b.append(el("span","lb",it.label));b.onclick=()=>tapChip(it);chips.append(b)});
+    d.append(chips);
+    if(g.id==="cp"){
+      const f=el("form","cpform");f.addEventListener("focusin",()=>document.body.classList.add("typing"));f.addEventListener("focusout",()=>setTimeout(()=>{if(!f.contains(document.activeElement))document.body.classList.remove("typing")},50));f.innerHTML='<input id="cpLo" aria-label="CP from" type="number" inputmode="numeric" min="10" max="9999" placeholder="From"><span>to</span><input id="cpHi" aria-label="CP to" type="number" inputmode="numeric" min="10" max="9999" placeholder="To"><button type="submit">Add</button>';
+      f.onsubmit=e=>{e.preventDefault();
+        const rd=id=>{const v=$(id).value.trim();return v===""?null:Math.max(0,Math.floor(+v))};
+        let lo=rd("#cpLo"),hi=rd("#cpHi");
+        if(lo==null&&hi==null){toast("Type a CP first");return}
+        if(lo!=null&&hi!=null&&lo>hi)[lo,hi]=[hi,lo];
+        const it=cpItem(lo,hi);if(findKey(it.key)){toast("Already added");return}
+        tapChip(it);$("#cpLo").value="";$("#cpHi").value="";toast("Added "+it.label);};
+      const tip=el("p","cptip","Leave one box empty for open ended, like 2500 and up.");
+      d.append(f,tip);
+    }
+    wrap.append(d)});
+  refresh();
+}
+const esc=t=>t.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function refresh(){
+  store.set("sd.groups",groups);
+  document.querySelectorAll("#sections .chip").forEach(b=>{const v=chipState(b.dataset.k);b.dataset.s=v;const l=getItem(b.dataset.k).label;b.setAttribute("aria-pressed",v?"true":"false");b.setAttribute("aria-label",l+(v===1?", included":v===-1?", left out":""))});
+  document.querySelectorAll("details.sec").forEach(d=>{const g=GROUPS.find(x=>x.id===d.dataset.g);const n=g.items.filter(it=>findKey(it.key)).length;const c=d.querySelector(".cnt");c.textContent=n+" picked";c.classList.toggle("on",n>0)});
+  const cards=$("#gcards");cards.innerHTML="";
+  groups.forEach((g,gi)=>{
+    if(gi)cards.append(el("span","gand","and"));
+    const c=el("div","gcard"+(gi===active?" on":""));
+    const t=el("span","gtxt");g.items.forEach((x,i)=>{if(i)t.append(el("i",null," or "));t.append(el("span",x.n?"neg":"",labelOf(x)))});c.append(t);
+    if(!g.solo){const o=el("button","or",gi===active?"done":"+ or");o.setAttribute("aria-label",gi===active?"Done adding options":"Add an or option to "+g.items.map(labelOf).join(" or "));o.setAttribute("aria-pressed",gi===active?"true":"false");o.onclick=()=>{active=gi===active?null:gi;refresh()};c.append(o)}
+    const x=el("button","x","✕");x.setAttribute("aria-label","Remove "+g.items.map(labelOf).join(" or "));x.onclick=()=>{dropGroup(gi);refresh()};c.append(x);
+    cards.append(c)});
+  $("#orHint").hidden=active===null;
+  const{s}=buildString(),out=$("#out"),ro=$("#readout");
+  if(!s){out.textContent="Nothing picked yet";out.className="out ph";ro.innerHTML="Tap anything below. Each tap adds an <b>and</b>. Use <b>+ or</b> on a group to add options to it.";cards.hidden=true}
+  else{out.textContent=s;out.className="out mono";cards.hidden=false;
+    const parts=groups.map(g=>{const l=g.items.map(labelOf);return l.length>1&&groups.length>1?"("+l.join(" or ")+")":l.join(" or ")});
+    ro.innerHTML="<b>Finds</b> "+esc(parts.join(" and "))+".";}
+  ro.hidden=!!s;
+  if(typeof dockState==="function")dockState();
+}
+function update(){refresh()}
+$("#protectBtn").onclick=()=>{let n=0;KEEPERS.forEach(k=>{if(!findKey(k)){groups.push({items:[{k,n:1}],solo:ITEM_BY_KEY[k].solo});n++}});active=null;refresh();toast(n?"Keepers left out":"Already done")};
+$("#clearBtn").onclick=()=>{groups=[];active=null;refresh()};
+$("#orDone").onclick=()=>{active=null;refresh()};
+$("#buildCopy").onclick=e=>doCopy(buildString().s,e.currentTarget);
+
+$("#q").addEventListener("input",e=>setQuery(e.target.value));
+$("#qClear").onclick=e=>{e.preventDefault();$("#q").value="";setQuery("");$("#q").focus()};
+
+
+
+
+/* ---------- dock: collapse when empty, minimise on demand, track height ---------- */
+let mini=store.get("sd.mini",false);
+function dockState(){
+  const empty=!buildString().s;
+  document.body.classList.toggle("dock-empty",empty);
+  document.body.classList.toggle("dock-mini",mini&&!empty);
+  const t=$("#dockToggle");t.hidden=empty;t.setAttribute("aria-expanded",String(!mini));
+}
+$("#dockToggle").onclick=()=>{mini=!mini;store.set("sd.mini",mini);dockState()};
+try{new ResizeObserver(()=>document.documentElement.style.setProperty("--dockh",$("#dock .dock-in").offsetHeight+"px")).observe($("#dock .dock-in"))}catch(e){}
+
+/* ---------- share a built string as a link ---------- */
+function shareCode(){return groups.map(g=>g.items.map(x=>(x.n?"-":"")+x.k).join("|")).join("~")}
+function loadShared(){
+  try{const code=new URLSearchParams(location.search).get("b");if(!code)return;
+    const gs=code.split("~").map(g=>{const items=g.split("|").map(t=>({k:t.replace(/^-/,""),n:t[0]==="-"?1:0})).filter(x=>getItem(x.k));
+      return{items,solo:items.length===1&&!!getItem(items[0].k).solo}}).filter(g=>g.items.length);
+    if(gs.length){groups=gs;active=null;store.set("sd.groups",groups)}
+    history.replaceState(null,"",location.pathname+"#build");
+  }catch(e){}
+}
+$("#shareBtn").onclick=async()=>{
+  if(!buildString().s){toast("Pick something first");return}
+  const url=location.origin+location.pathname+"?b="+encodeURIComponent(shareCode())+"#build";
+  try{if(navigator.share){await navigator.share({title:"Pokémon GO search string",text:buildString().s,url});return}}catch(e){if(e&&e.name==="AbortError")return}
+  if(await copyText(url))toast("Link copied. Anyone who opens it gets this string.");else toast("Couldn't copy the link");
+};
+
+/* ---------- terms reference ---------- */
+const TERMS=[
+ {id:"combine",name:"Combining terms",hint:"Mix terms together to narrow things down.",rows:[
+  ["&","AND. Both have to match. <code>shiny&lucky</code> shows Pokémon that are shiny and lucky."],
+  [",","OR. Either can match. <code>fire,water</code> shows fire or water types. <code>;</code> and <code>:</code> do the same thing."],
+  ["!","NOT. Leaves something out. Put it right before the term with no space, like <code>!shiny</code>."],
+  ["a,b&c","Commas are grouped first, so this means (a or b) and c. There are no brackets in GO."],
+  ["+name","The whole evolution family, like <code>+bulbasaur</code>. Only works at the start or after a comma."]]},
+ {id:"basics",name:"Names, numbers and tags",rows:[
+  ["name","Any Pokémon whose name or nickname starts with this."],
+  ["25","Pokédex number. Ranges work too: <code>1-151</code>."],
+  ["#","Anything with a tag. <code>!#</code> is everything untagged."],
+  ["#tag","Pokémon with that tag name, like <code>#trade</code>."]]},
+ {id:"ivs",name:"Stars and IVs",hint:"Stat bars go 0 to 4. 4 means 15, 3 means 11 to 14, 2 means 6 to 10, 1 means 1 to 5, 0 means 0.",rows:[
+  ["4*","Appraisal stars from 0* to 4*. <code>4*</code> is a perfect 15/15/15."],
+  ["4attack","Attack bar. <code>4attack</code> is 15 Attack, <code>0attack</code> is 0. Ranges like <code>3-4attack</code> work."],
+  ["4defense","Defense bar, same scale."],
+  ["4hp","HP bar, same scale."],
+  ["0attack&0defense&0hp","A nundo, 0/0/0."]]},
+ {id:"numbers",name:"CP, HP and ranges",hint:"Any number term takes a range: <code>10</code>, <code>10-20</code>, <code>10-</code> (10 and up) or <code>-10</code> (up to 10).",rows:[
+  ["cp1500","Combat Power. <code>cp-1500</code> is Great League range and under."],
+  ["hp100","Max HP, ignoring damage."],
+  ["candyxl","Powered up past level 40 with XL candy."],
+  ["count2-","Species you have 2 or more of."],
+  ["count","Shortcut for <code>count2-</code>, so anything you have duplicates of."],
+  ["countcandy100-","Species you have at least 100 candy for. <code>countcandyxl</code> does XL candy."]]},
+ {id:"special",name:"Special Pokémon",rows:[
+  ["shiny","Shiny Pokémon."],["lucky","Lucky Pokémon."],["legendary","Legendary Pokémon."],["mythical","Mythical Pokémon."],
+  ["ultrabeast","Ultra Beasts. <code>ultra beasts</code> with a space works too."],
+  ["shadow","Shadow Pokémon."],["purified","Purified Pokémon."],["costume","Event costume Pokémon, like hats."],
+  ["background","Any location or special background. <code>locationbackground</code> and <code>specialbackground</code> split them."],
+  ["dynamax","Dynamax Pokémon. <code>gigantamax</code> for Gigantamax."],
+  ["maxmove1-","Anything that can join Max Battles."],
+  ["eggsonly","Species you normally only get from eggs."],
+  ["party","Caught during a Party."],
+  ["hypertraining","Currently in Hyper Training."],
+  ["fusion","Pokémon that can fuse, like Necrozma and Kyurem."]]},
+ {id:"size",name:"Size and gender",rows:[
+  ["xxl","Size compared to the species: <code>xxs</code>, <code>xs</code>, <code>xl</code>, <code>xxl</code>."],
+  ["male","Gender: <code>male</code>, <code>female</code> or <code>genderunknown</code>."]]},
+ {id:"from",name:"Where you got it",hint:"Most of these only go back to late 2020.",rows:[
+  ["raid","Any raid. <code>remoteraid</code>, <code>megaraid</code>, <code>exraid</code> and <code>primalraid</code> narrow it down."],
+  ["hatched","Hatched from an egg."],["research","Research tasks."],["gbl","GO Battle League rewards."],
+  ["rocket","Team GO Rocket battles."],["snapshot","Photobombs from GO Snapshot."],["traded","Received in a trade."]]},
+ {id:"when",name:"When and where caught",rows:[
+  ["age0","Days since caught. <code>age0</code> is today, <code>age0-7</code> is the last week."],
+  ["year2016","Year caught. <code>year2016-2020</code> for a range."],
+  ["distance100","Caught within 100 km of where you are now. No dash means less than."],
+  ["distance100-","Caught 100 km or more from where you are now."]]},
+ {id:"evo",name:"Evolving",rows:[
+  ["evolve","Ready to evolve right now."],
+  ["evolvenew","Evolving it adds a new Pokédex entry."],
+  ["megaevolve","Has enough Mega Energy to Mega Evolve."],
+  ["item","Needs an evolution item and you have the candy."],
+  ["tradeevolve","Evolves for free after a trade."],
+  ["evolvequest","Has a buddy evolution task, like walking or earning hearts."]]},
+ {id:"buddy",name:"Buddy, Mega and favourites",rows:[
+  ["buddy0","Never been your buddy."],
+  ["buddy1","Has been your buddy. <code>buddy2</code> is Good, <code>buddy3</code> Great, <code>buddy4</code> Ultra and <code>buddy5</code> Best Buddy."],
+  ["mega","Anything with a Mega level at all. Same as <code>mega0-</code>."],
+  ["mega0","Never Mega Evolved."],
+  ["mega1","Mega level 1, Base."],
+  ["mega2","Mega level 2, High."],
+  ["mega3","Mega level 3, Max."],
+  ["mega4","Mega level 4, Super Max."],
+  ["mega1-","Has Mega Evolved at least once. Ranges like <code>mega2-3</code> work too."],
+  ["candykm5","Buddy candy distance: 1, 3, 5 or 20 km."],
+  ["favorite","Starred Pokémon. <code>favourite</code> works too."],
+  ["defender","Currently defending a gym."]]},
+ {id:"moves",name:"Moves",hint:"Start move searches with @.",rows:[
+  ["@fire","Knows a move of that type."],
+  ["@frustration","Knows that move. Typing part of the name works."],
+  ["@psychi","Tip: <code>@psychic</code> also matches Psychic Fangs. Leave off the last letter to avoid that, and use the same trick for other moves with shared names."],
+  ["@special","Knows a move that needs an Elite TM, including legacy moves, Frustration and Return."],
+  ["@weather","Knows a move that's boosted in the current weather."],
+  ["@1","Fast move slot. <code>@1fire</code> is a fire fast move."],
+  ["@2","First charged move. <code>@2water</code> is a water charged move."],
+  ["@3","Second charged move, if unlocked. <code>@3fire</code> is a fire second charged move."],
+  ["!@3move","Has a second charged move unlocked, so three moves in total. Odd syntax, but it works."],
+  [">fire","Knows a move that's super effective against fire types."],
+  ["<fire","Types that take super effective damage from fire moves."],
+  ["adventureeffect","Knows a move with an Adventure Effect."],
+  ["dynamax1-3","Max move levels unlocked. <code>maxguard</code> and <code>maxspirit</code> work too."]]},
+ {id:"types",name:"Types and regions",rows:[
+  ["fire","Any of the 18 types: normal, fire, water, grass, electric, ice, fighting, poison, ground, flying, psychic, bug, rock, ghost, dragon, dark, steel, fairy."],
+  ["kanto","Region the species comes from: kanto, johto, hoenn, sinnoh, unova, kalos, alola, galar, hisui, paldea."],
+  ["alola","<code>alola</code>, <code>galar</code>, <code>hisui</code> and <code>paldea</code> also include regional forms, like Alolan Vulpix. White-Striped Basculin doesn't show under hisui."]]},
+ {id:"friends",name:"Friends list",hint:"These work in your friends list search, not your Pokémon.",rows:[
+  ["giftable","Friends you can send a gift to."],
+  ["interactable","Friends you haven't interacted with today."],
+  ["lucky","Lucky friends."],
+  ["friendlevel4","Friendship level 0 to 5. 4 is Ultra, 5 is Best. Ranges work."]]},
+ {id:"dex",name:"Pokédex search",hint:"The Pokédex search box is simpler than storage. No <code>&</code>, <code>,</code> or <code>!</code>, and one search at a time.",rows:[
+  ["chu","Names match anywhere, not just the start, so <code>chu</code> finds Pikachu and Raichu."],
+  ["25","Exact Pokédex number only. Ranges don't work here."],
+  ["dark","Type, but base forms only, so it misses forms like Alolan Meowth."]]}
+];
+function renderTerms(){
+  const q=($("#tq").value||"").trim().toLowerCase();
+  const list=$("#termList"),jump=$("#termJump");list.innerHTML="";jump.innerHTML="";let n=0;
+  TERMS.forEach(sec=>{
+    const rows=sec.rows.filter(([t,d])=>!q||(t+" "+d+" "+sec.name).toLowerCase().includes(q));
+    if(!rows.length)return;n+=rows.length;
+    const box=el("div","tsec");box.id="t-"+sec.id;box.append(el("h3",null,sec.name));
+    if(sec.hint&&!q){const h=el("p","hint");h.innerHTML=sec.hint;box.append(h)}
+    rows.forEach(([t,d])=>{const r=el("div","trow");const b=el("button","tm",t);b.title="Copy";b.setAttribute("aria-label","Copy "+t);
+      b.onclick=async()=>{if(await copyText(t)){b.classList.add("done");toast("Copied "+t);setTimeout(()=>b.classList.remove("done"),900)}};
+      const dd=el("div","tdesc");dd.innerHTML=d;r.append(b,dd);box.append(r)});
+    list.append(box);
+    if(!q){const a=el("a",null,sec.name);a.href="#terms";a.onclick=e=>{e.preventDefault();box.scrollIntoView({behavior:"smooth",block:"start"})};jump.append(a)}
+  });
+  if(!n)list.append(el("div","empty","No term matches that."));
+}
+$("#tq").addEventListener("input",renderTerms);
+
+/* ---------- tabs ---------- */
+const VIEWS=["presets","build","terms"];
+function route(){
+  const v=VIEWS.includes(location.hash.slice(1))?location.hash.slice(1):"presets";
+  VIEWS.forEach(x=>$("#v-"+x).classList.toggle("active",x===v));
+  document.querySelectorAll("nav.tabs a").forEach(a=>a.setAttribute("aria-current",a.dataset.v===v?"page":"false"));
+  document.body.classList.toggle("on-build",v==="build");window.scrollTo(0,0);
+}
+window.addEventListener("hashchange",route);
+
+/* ---------- install ---------- */
+let deferred;
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferred=e;$("#installBtn").classList.add("show")});
+$("#installBtn").onclick=async()=>{if(!deferred)return;deferred.prompt();try{await deferred.userChoice}catch(e){}deferred=null;$("#installBtn").classList.remove("show")};
+if("serviceWorker" in navigator&&location.protocol==="https:")window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+
+renderSugs();renderTerms();renderPresets();loadShared();renderSections();dockState();route();
+})();
+</script>
+</body>
+</html>
